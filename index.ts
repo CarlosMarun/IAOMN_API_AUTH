@@ -37,7 +37,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
     .findOne({ email: userName });
 
   if (user) {
-    if (!bcrypt.compare(password, user.password)) {
+    if (!bcrypt.compareSync(password, user.password)) {
       return res.status(403).json({
         ok: false,
         msg:
@@ -76,7 +76,6 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       ok: false,
       msg:
         "Lo sentimos el usuario y/o contraseña no validos. Favor de verificar!",
-      token,
     });
   }
 });
@@ -102,6 +101,27 @@ app.get(
       mockCustomer,
       user: authUser,
     });
+  }
+);
+
+app.get(
+  "/api/auth/getUsers",
+  token.verify,
+  async (req: Request, res: Response) => {
+    const users = await mongoDB.db.collection("users").find({}).toArray();
+    console.log(users);
+
+    if (users.length !== 0) {
+      res.status(200).json({
+        ok: true,
+        users: [users],
+      });
+    } else {
+      res.status(404).json({
+        ok: false,
+        msg: "Nada por aqui!",
+      });
+    }
   }
 );
 
@@ -131,28 +151,32 @@ app.post("/api/auth/createUser", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/api/auth/deleteUser", async (req: Request, res: Response) => {
-  const { id } = req.body;
+app.post(
+  "/api/auth/deleteUser",
+  token.verify,
+  async (req: Request, res: Response) => {
+    const { id } = req.body;
 
-  const validateUser = await mongoDB.db
-    .collection("users")
-    .findOne({ _id: new ObjectId(id) });
-  if (!validateUser) {
-    res.status(403).json({
-      ok: false,
-      msg: "El usuario no existe",
-    });
-  } else {
-    const deleted = await mongoDB.db
+    const validateUser = await mongoDB.db
       .collection("users")
-      .deleteOne({ _id: new ObjectID(id) });
-    res.status(200).json({
-      ok: true,
-      msg: "Eliminado correctamente",
-      deletedCount: deleted.deletedCount,
-    });
+      .findOne({ _id: new ObjectId(id) });
+    if (!validateUser) {
+      res.status(403).json({
+        ok: false,
+        msg: "El usuario no existe",
+      });
+    } else {
+      const deleted = await mongoDB.db
+        .collection("users")
+        .deleteOne({ _id: new ObjectID(id) });
+      res.status(200).json({
+        ok: true,
+        msg: "Eliminado correctamente",
+        deletedCount: deleted.deletedCount,
+      });
+    }
   }
-});
+);
 
 app.listen(port, async () => {
   console.log(`Servidor de API funcionando en puerto ${port}`);
