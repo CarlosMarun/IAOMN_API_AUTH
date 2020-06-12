@@ -35,6 +35,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
   const user = await mongoDB.db
     .collection("users")
     .findOne({ email: userName });
+  console.log(user);
 
   if (user) {
     if (!bcrypt.compareSync(password, user.password)) {
