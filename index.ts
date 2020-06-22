@@ -66,6 +66,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
           ok: true,
           msg: "Usuario logeado",
           token,
+          userValid,
         });
       }
     );
@@ -107,7 +108,6 @@ app.get(
   token.verify,
   async (req: Request, res: Response) => {
     const users = await mongoDB.db.collection("users").find({}).toArray();
-    console.log(users);
 
     if (users.length !== 0) {
       res.status(200).json({
